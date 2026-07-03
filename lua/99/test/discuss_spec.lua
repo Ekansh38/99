@@ -165,6 +165,49 @@ describe("discuss", function()
     eq(last, vim.api.nvim_win_get_cursor(session.twin)[1])
   end)
 
+  it("re-captures the live document state on every send", function()
+    local state = _99.__get_state()
+    local file = vim.fn.tempname() .. ".lua"
+    vim.fn.writefile({ "local a = 1", "local b = 2", "local c = 3" }, file)
+
+    local session = discuss.__Session.new(state, {
+      block = "<SELECTION_CONTENT>local b = 2</SELECTION_CONTENT>",
+      label = "test.lua:2-2",
+      file = file,
+      start_row = 2,
+      end_row = 2,
+    }, file)
+    discuss.__current = session
+    session:open_panel()
+
+    session:send("what is b")
+    local q1 = provider.request.query
+    assert(
+      q1:find("CURRENT_DOCUMENT_STATE", 1, true),
+      "first turn must include the live document state"
+    )
+    assert(q1:find("local b = 2", 1, true), "must contain current content")
+    provider:resolve("success", "b is 2")
+    test_utils.next_frame()
+
+    --- the user edits the file between messages
+    vim.fn.writefile(
+      { "local a = 1", "local b = 99", "local c = 3" },
+      file
+    )
+
+    session:send("and now?")
+    local q2 = provider.request.query
+    assert(
+      q2:find("local b = 99", 1, true),
+      "second turn must see the edited file"
+    )
+    provider:resolve("success", "b is 99")
+    test_utils.next_frame()
+
+    vim.fn.delete(file)
+  end)
+
   it("resumes a conversation from a tracked request", function()
     local state = _99.__get_state()
     discuss.open(state)

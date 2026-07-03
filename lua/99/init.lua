@@ -207,7 +207,9 @@ local _99_state
 --- any buffers.  In visual mode this starts a new discussion about the
 --- current selection.  In normal mode it toggles the panel, resuming the
 --- previous conversation if one exists.  Conversations are multi-turn and
---- the last successful one persists across Neovim sessions (see open)
+--- the last successful one persists across Neovim sessions (see open).
+--- The live state of the document is re-captured on every message, so
+--- edits made mid discussion are always visible to the model
 --- @field view_logs fun(): nil
 --- view_logs allows you to select the request you want to see and then you
 --- get to see the logs.

@@ -23,6 +23,9 @@ local SPINNER = {
 --- @class _99.Discuss.Selection
 --- @field block string the fully rendered selection context for the prompt
 --- @field label string short human label shown in the panel header
+--- @field file string | nil absolute path of the originating file
+--- @field start_row number | nil 1 based first line of the selection
+--- @field end_row number | nil 1 based last line of the selection
 
 --- @class _99.Discuss.Session
 --- @field state _99.State
@@ -184,6 +187,51 @@ function Session:_start_spinner()
   )
 end
 
+--- @param file string
+--- @return string[] | nil
+local function read_current_lines(file)
+  local buf = vim.fn.bufnr(file)
+  if buf ~= -1 and vim.api.nvim_buf_is_loaded(buf) then
+    return vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+  end
+  if vim.uv.fs_stat(file) then
+    return vim.fn.readfile(file)
+  end
+  return nil
+end
+
+--- The selection snapshot goes stale as soon as the user edits the file,
+--- so every send also includes the live document state around the
+--- original selection.
+--- @return string | nil
+function Session:_current_document_block()
+  local sel = self.selection
+  if not (sel and sel.file and sel.file ~= "" and sel.start_row) then
+    return nil
+  end
+  local lines = read_current_lines(sel.file)
+  if not lines or #lines == 0 then
+    return nil
+  end
+  local from = math.max(1, sel.start_row - 100)
+  local to = math.min(#lines, (sel.end_row or sel.start_row) + 100)
+  local slice = {}
+  for i = from, to do
+    table.insert(slice, lines[i])
+  end
+  return string.format(
+    '<CURRENT_DOCUMENT_STATE file="%s" lines="%d-%d">\n%s\n'
+      .. "</CURRENT_DOCUMENT_STATE>\n"
+      .. "CURRENT_DOCUMENT_STATE is the live file as of the newest message."
+      .. " The user may have edited it since the discussion started;"
+      .. " trust it over SELECTION_CONTENT and earlier snapshots.",
+    sel.file,
+    from,
+    to,
+    table.concat(slice, "\n")
+  )
+end
+
 --- @return string
 function Session:_system_prompt()
   local prompts = self.state.prompts.prompts
@@ -191,6 +239,10 @@ function Session:_system_prompt()
 
   if self.selection then
     table.insert(parts, self.selection.block)
+    local current = self:_current_document_block()
+    if current then
+      table.insert(parts, current)
+    end
   elseif self.file_path ~= "" then
     table.insert(
       parts,
@@ -460,6 +512,9 @@ local function capture_selection(state)
   return {
     block = state.prompts.prompts.discuss_selection(full_path, range),
     label = string.format("%s:%d-%d", name, srow + 1, erow + 1),
+    file = full_path,
+    start_row = srow + 1,
+    end_row = erow + 1,
   }, full_path
 end
 
