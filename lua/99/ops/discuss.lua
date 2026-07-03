@@ -101,6 +101,15 @@ function Session:render()
     return
   end
 
+  --- only follow the bottom if the cursor was already there, so the
+  --- user can scroll up through the transcript while a reply streams in
+  local follow = true
+  if self.twin and vim.api.nvim_win_is_valid(self.twin) then
+    local last = vim.api.nvim_buf_line_count(self.tbuf)
+    local row = vim.api.nvim_win_get_cursor(self.twin)[1]
+    follow = row >= last
+  end
+
   local lines = {}
   local function push(text)
     for _, l in ipairs(vim.split(text, "\n")) do
@@ -141,7 +150,9 @@ function Session:render()
   if self.twin and vim.api.nvim_win_is_valid(self.twin) then
     vim.wo[self.twin].winbar =
       string.format(" 99 Discuss · %s", self.state.model)
-    vim.api.nvim_win_set_cursor(self.twin, { #lines, 0 })
+    if follow then
+      vim.api.nvim_win_set_cursor(self.twin, { #lines, 0 })
+    end
   end
 end
 

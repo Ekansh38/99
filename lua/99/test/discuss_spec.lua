@@ -141,6 +141,30 @@ describe("discuss", function()
     )
   end)
 
+  it("does not yank the cursor to the bottom while scrolled up", function()
+    local state = _99.__get_state()
+    discuss.open(state)
+    local session = discuss.__current
+
+    session:send("hello")
+    provider:resolve("success", "line one\nline two\nline three")
+    test_utils.next_frame()
+
+    --- user scrolls to the top of the transcript
+    vim.api.nvim_win_set_cursor(session.twin, { 1, 0 })
+    session:render()
+    eq({ 1, 0 }, vim.api.nvim_win_get_cursor(session.twin))
+
+    --- once back at the bottom, renders follow again
+    local last = vim.api.nvim_buf_line_count(session.tbuf)
+    vim.api.nvim_win_set_cursor(session.twin, { last, 0 })
+    session:send("more")
+    provider:resolve("success", "even more")
+    test_utils.next_frame()
+    last = vim.api.nvim_buf_line_count(session.tbuf)
+    eq(last, vim.api.nvim_win_get_cursor(session.twin)[1])
+  end)
+
   it("resumes a conversation from a tracked request", function()
     local state = _99.__get_state()
     discuss.open(state)
