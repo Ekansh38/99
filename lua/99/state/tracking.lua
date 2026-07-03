@@ -8,6 +8,7 @@ local Prompt = require("99.prompt")
 --- @field search number | nil
 --- @field tutorial number | nil
 --- @field visual number | nil
+--- @field discuss number | nil
 ---
 --- @class _99.State.Tracking.Config.Options
 --- @field serialize_counts _99.State.Tracking.Config.Options.Counts | nil
@@ -179,6 +180,7 @@ Tracking.__config = {
     search = 1,
     tutorial = 3,
     visual = 0,
+    discuss = 1,
   },
 }
 
@@ -195,6 +197,7 @@ function Tracking.setup(opts)
     sa.search = opts_sa.search or sa.search
     sa.tutorial = opts_sa.tutorial or sa.tutorial
     sa.visual = opts_sa.visual or sa.visual
+    sa.discuss = opts_sa.discuss or sa.discuss
   end
 end
 

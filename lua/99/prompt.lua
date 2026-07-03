@@ -21,8 +21,8 @@ local filetype_map = {
 }
 
 -- luacheck: ignore
---- @alias _99.Prompt.Data _99.Prompt.Data.Search | _99.Prompt.Data.Tutorial | _99.Prompt.Data.Visual | _99.Prompt.Data.Vibe
---- @alias _99.Prompt.Operation "visual" | "tutorial" | "search" | "vibe"
+--- @alias _99.Prompt.Data _99.Prompt.Data.Search | _99.Prompt.Data.Tutorial | _99.Prompt.Data.Visual | _99.Prompt.Data.Vibe | _99.Prompt.Data.Discuss
+--- @alias _99.Prompt.Operation "visual" | "tutorial" | "search" | "vibe" | "discuss"
 --- @alias _99.Prompt.QFixOperation "search" | "vibe"
 --- @alias _99.Prompt.EndingState "failed" | "success" | "cancelled"
 --- @alias _99.Prompt.State "ready" | "requesting" | _99.Prompt.EndingState
@@ -40,6 +40,13 @@ local filetype_map = {
 --- @field type "vibe"
 --- @field response string
 --- @field qfix_items _99.Search.Result[]
+
+--- @class _99.Prompt.Data.Discuss
+--- @field type "discuss"
+--- @field response string
+--- @field messages _99.Discuss.Message[]
+--- @field selection _99.Discuss.Selection | nil
+--- @field file_path string | nil
 
 --- @class _99.Prompt.Data.Visual
 --- @field type "visual"
@@ -217,6 +224,25 @@ end
 
 --- @param _99 _99.State
 --- @return _99.Prompt
+function Prompt.discuss(_99)
+  _99:refresh_rules()
+
+  --- @type _99.Prompt
+  local context = setmetatable({}, Prompt)
+  set_defaults(context, _99)
+  context.operation = "discuss"
+  context.data = {
+    type = "discuss",
+    response = "",
+    messages = {},
+  }
+  context.logger:debug("99 Request", "method", "discuss")
+
+  return context
+end
+
+--- @param _99 _99.State
+--- @return _99.Prompt
 function Prompt.search(_99)
   _99:refresh_rules()
 
@@ -269,6 +295,7 @@ local allowed_context_types = {
   "search",
   "tutorial",
   "vibe",
+  "discuss",
 }
 --- @return boolean
 function Prompt:valid()
