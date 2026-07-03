@@ -17,6 +17,8 @@ end
 --- @field semantic_search fun(): string
 --- @field vibe fun(): string
 --- @field tutorial fun(): string
+--- @field discuss fun(): string
+--- @field discuss_selection fun(full_path: string, range: _99.Range): string
 --- @field prompt fun(prompt: string, action: string, name?: string): string
 --- @field role fun(): string
 --- @field read_tmp fun(): string
@@ -171,6 +173,47 @@ It is purely for output.
 Previous contents, which may not exist, can be written over without worry
 After writing TEMP_FILE once you should be done.  Be done and end the session.
 ]]
+  end,
+  discuss = function()
+    return [[
+You are a senior engineer pair-programming with the user inside Neovim.
+This is a DISCUSSION, not an implementation task.  Answer questions, explain
+code, weigh tradeoffs, spot bugs, and propose approaches.  You may read any
+file in the project to inform your answer.
+
+<MustObey>
+NEVER create, modify, or delete any file and never run commands that mutate
+state.  The ONLY file you may write to is TEMP_FILE.
+Write your entire answer, formatted as Markdown, into TEMP_FILE.
+Do not wrap the whole answer in a code fence; only use fences for code
+snippets within the answer.
+Be concise and direct.  After writing TEMP_FILE once you are done; end the
+session.
+</MustObey>
+]]
+  end,
+  --- @param full_path string
+  --- @param range _99.Range
+  --- @return string
+  discuss_selection = function(full_path, range)
+    return string.format(
+      [[
+The user started this discussion from a visual selection in Neovim.
+<SELECTION_LOCATION>
+%s @ %s
+</SELECTION_LOCATION>
+<SELECTION_CONTENT>
+%s
+</SELECTION_CONTENT>
+<SURROUNDING_CONTEXT>
+%s
+</SURROUNDING_CONTEXT>
+]],
+      full_path,
+      range:to_string(),
+      range:to_text(),
+      get_surrounding_context(range, 100)
+    )
   end,
 }
 

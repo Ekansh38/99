@@ -192,8 +192,8 @@ local _99_state
 --- Performs a search across your project with the prompt you provide and return out a list of
 --- locations with notes that will be put into your quick fix list.
 --- @field vibe fun(opts?: _99.ops.Opts): _99.TraceID | nil
---- will ask opencode or whatever provider currently being used to perform a vibe
---- session.
+--- Agentic AI mode. Provide a prompt describing what you want built or changed, your chosen provider
+--- will implement it and report every modified location in the quickfix list.
 --- @field open fun(): nil
 --- Opens a selection window for you to select the last interaction to open
 --- and display its contents in a way that makes sense for its type.  For
@@ -202,6 +202,12 @@ local _99_state
 --- @field visual fun(opts: _99.ops.Opts): _99.TraceID
 --- takes your current selection and sends that along with the prompt provided and replaces
 --- your visual selection with the results
+--- @field discuss fun(opts?: _99.ops.Opts): nil
+--- opens a chat side panel to discuss code with the AI without modifying
+--- any buffers.  In visual mode this starts a new discussion about the
+--- current selection.  In normal mode it toggles the panel, resuming the
+--- previous conversation if one exists.  Conversations are multi-turn and
+--- the last successful one persists across Neovim sessions (see open)
 --- @field view_logs fun(): nil
 --- view_logs allows you to select the request you want to see and then you
 --- get to see the logs.
@@ -310,6 +316,8 @@ function _99.open()
       _99.open_qfix_for_request(r)
     elseif r.operation == "tutorial" then
       _99.open_tutorial(r)
+    elseif r.operation == "discuss" then
+      ops.discuss.resume(_99_state, r)
     end
   end)
 end
@@ -352,6 +360,12 @@ function _99.tutorial(opts)
   else
     capture_prompt(ops.tutorial, "Tutorial", context, opts)
   end
+end
+
+--- @param opts? _99.ops.Opts
+function _99.discuss(opts)
+  local o = process_opts(opts)
+  ops.discuss.open(_99_state, o)
 end
 
 --- @param opts _99.ops.Opts?

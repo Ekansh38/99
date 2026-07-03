@@ -10,6 +10,8 @@ local utils = require("99.utils")
 ---
 --- Until then, it is going to be a single bit of work that you can provide
 --- the description and then use search to find what is left that needs to be done.
+---
+--- Work items are saved to <tmp_dir>/work-item and persist across Neovim sessions per project directory.
 --- @docs base
 --- @field set_work fun(opts?: _99.WorkOpts): nil
 --- will set the work for the project.  If opts provide a description then no
