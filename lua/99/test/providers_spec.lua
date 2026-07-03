@@ -54,6 +54,8 @@ describe("providers", function()
         Providers.CursorAgentProvider._build_command(nil, "test query", request)
       eq({
         "cursor-agent",
+        "--trust",
+        "--force",
         "--model",
         "anthropic/claude-sonnet-4-5",
         "--print",
