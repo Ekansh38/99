@@ -111,8 +111,8 @@ function Session:render()
   push(string.format("# 99 Discuss — %s", self:_header_label()))
   if #self.messages == 0 and not self.pending then
     push("")
-    push("_Ask anything about this code.  `<CR>`, `<C-s>` or `:w` in the")
-    push("box below sends.  `#rule` and `@file` completions work here too._")
+    push("_Ask anything about this code.  `:w` or `<C-s>` in the box")
+    push("below sends.  `#rule` and `@file` completions work here too._")
   end
 
   for _, msg in ipairs(self.messages) do
@@ -263,7 +263,11 @@ function Session:send(text)
     if status == "success" then
       local reply = vim.trim(response or "")
       if reply == "" then
-        reply = "_the model returned an empty response_"
+        reply = "_the model returned an empty response — this usually means"
+          .. " the provider was not allowed to write its answer file."
+          .. " For opencode, pass"
+          .. ' `provider_extra_args = { "--dangerously-skip-permissions" }`'
+          .. " in setup or allow `edit` permission in opencode.json_"
       end
       table.insert(self.messages, { role = "assistant", content = reply })
       context.data.response = reply
@@ -365,7 +369,7 @@ function Session:open_panel()
   iwo.number = false
   iwo.relativenumber = false
   iwo.signcolumn = "no"
-  iwo.winbar = " prompt · <CR>/<C-s>/:w send · <C-c> cancel · q close"
+  iwo.winbar = " prompt · :w or <C-s> send · <C-c> cancel · q close"
 
   --- attach #rule and @file completions to the input buffer
   Extensions.setup_buffer(self.state)
@@ -391,7 +395,6 @@ function Session:open_panel()
   end
 
   local imap = { buffer = self.ibuf, nowait = true }
-  vim.keymap.set("n", "<CR>", submit, imap)
   vim.keymap.set({ "n", "i" }, "<C-s>", submit, { buffer = self.ibuf })
   vim.keymap.set("n", "q", close, imap)
   vim.keymap.set("n", "<C-c>", cancel, { buffer = self.ibuf })
